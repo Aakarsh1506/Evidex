@@ -1,0 +1,131 @@
+/* The AI case summary panel. Inherits the case file's colour variables. */
+
+.case-summary {
+  border: 1px solid var(--card-border, #262626);
+  border-radius: 9px;
+  padding: 16px 18px;
+  margin-bottom: 18px;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.case-summary-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.case-summary-head h3 {
+  font-family: var(--font-type, monospace);
+  font-size: 0.86rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent, #c9a463);
+  margin: 0;
+}
+
+.case-summary-note,
+.case-summary-meta,
+.case-summary-verify {
+  font-size: 0.76rem;
+  color: var(--text-dim, #8f8f8f);
+  margin: 4px 0 0;
+}
+.case-summary-verify {
+  border-left: 2px solid var(--accent-dim, #8a744a);
+  padding-left: 8px;
+  margin: 12px 0;
+}
+
+.case-summary-working { font-size: 0.8rem; color: var(--accent, #c9a463); margin: 12px 0 0; }
+.case-summary-error { font-size: 0.8rem; color: var(--btn, #d93636); margin: 12px 0 0; }
+
+/* Sections read as a case timeline: one continuous rail down the left, a marker per
+   stage. The rail is each section's own left border, so adjacent sections join up with
+   no wrapper element and the markup stays as it is. */
+.case-summary-section {
+  position: relative;
+  margin: 0;
+  padding: 0 0 18px 22px;
+  border-left: 2px solid var(--accent-dim, #8a744a);
+}
+/* The last stage stops the rail at its marker instead of trailing into empty space. */
+.case-summary-section:last-child {
+  border-left-color: transparent;
+  padding-bottom: 4px;
+}
+.case-summary-section:last-child::after {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 0;
+  width: 2px;
+  height: 11px;
+  background: var(--accent-dim, #8a744a);
+}
+/* Stage marker, centred on the rail and aligned to its heading. */
+.case-summary-section::before {
+  content: "";
+  position: absolute;
+  left: -6px;
+  top: 5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent, #c9a463);
+  box-shadow: 0 0 0 3px rgba(201, 164, 99, 0.18);
+}
+.case-summary-section h4 {
+  font-family: var(--font-type, monospace);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent, #c9a463);
+  margin: 0 0 8px;
+}
+.case-summary-section ul { margin: 0; padding-left: 0; list-style: none; }
+.case-summary-section li {
+  position: relative;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text, #f2f2f2);
+  margin-bottom: 10px;
+  padding-left: 12px;
+}
+/* A small tick per entry, so items under one stage stay visually grouped. */
+.case-summary-section li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 5px;
+  height: 1px;
+  background: var(--accent-dim, #8a744a);
+}
+.case-summary-section li:last-child { margin-bottom: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .case-summary-section { transition: border-color 160ms; }
+}
+
+.case-summary-cites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+}
+.case-summary-cites a,
+.case-summary-cites .case-summary-cite,
+.case-summary-cites em {
+  font-family: var(--font-type, monospace);
+  font-size: 0.68rem;
+  font-style: normal;
+  padding: 1px 6px;
+  border: 1px solid var(--accent-dim, #8a744a);
+  border-radius: 4px;
+  color: var(--accent, #c9a463);
+  overflow-wrap: anywhere;
+}
+.case-summary-cites .case-summary-cite { background: none; cursor: pointer; font-family: inherit; }
+.case-summary-cites a:hover,
+.case-summary-cites .case-summary-cite:hover { background: var(--accent, #c9a463); color: #101010; }

@@ -169,3 +169,40 @@
 
 /* Progress line shown while a batch of files uploads. */
 .upload-hint { max-width: 520px; margin: 4px auto 0; color: var(--text-dim); font-size: .8rem; line-height: 1.55; text-align: center; }
+
+.doc-original-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+/* Selecting a document opens its details beside the list instead of below it, so the
+   card you clicked stays in view. One column until something is selected. */
+.doc-layout { max-width: 1400px; margin: 0 auto; }
+
+@media (min-width: 1100px) {
+  .doc-layout-split {
+    display: grid;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    gap: 26px;
+    align-items: start;
+  }
+  /* Narrower list while the panel is open: cards reflow to one or two per row. */
+  .doc-layout-split .doc-grid {
+    max-width: none;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+  .doc-layout-split .doc-preview {
+    max-width: none;
+    margin: 0;
+    /* Stays put while the list scrolls; its own body scrolls when the extraction is long. */
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+  }
+}
+
+/* Scrollbar hidden on this panel; scrolling still works by wheel, trackpad and keyboard. */
+.doc-layout-split .doc-preview {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* legacy Edge */
+}
+.doc-layout-split .doc-preview::-webkit-scrollbar { width: 0; height: 0; }

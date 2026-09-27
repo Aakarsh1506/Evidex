@@ -15,7 +15,7 @@ from .config import Settings
 from .db import Database
 from .errors import APIError
 from .neo4j_driver import GraphDatabase
-from .routes import auth, crime_types, criminals, documents, officers, stats, workspace
+from .routes import auth, cases, crime_types, criminals, documents, officers, stats, workspace
 from .security import token_lifetime
 from .services.ingestion import worker
 
@@ -84,7 +84,7 @@ def create_app(
                         await task
 
     app = FastAPI(
-        title="Criminal Network Analysis API",
+        title="Secure Document Management System API",
         version="1.0.0",
         lifespan=lifespan,
         default_response_class=APIJSONResponse,
@@ -124,6 +124,7 @@ def create_app(
 
     for router in (
         auth.router,
+        cases.router,
         criminals.router,
         crime_types.router,
         stats.router,

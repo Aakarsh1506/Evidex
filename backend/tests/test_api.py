@@ -44,6 +44,13 @@ def test_route_inventory_matches_express(app):
             ["GET", "/api/criminals/{id}/activity"],
                 ["GET", "/api/criminals/{id}/record"],
                 ["POST", "/api/criminals/{id}/record/generate"],
+            # Cases are the primary browsable record; the person routes above stay
+            # for the folded-in participant details and the document review flow.
+            ["GET", "/api/cases"],
+                ["GET", "/api/cases/{id}"],
+                ["GET", "/api/cases/{id}/network"],
+                ["POST", "/api/cases/{id}/summary"],
+                ["POST", "/api/cases/{id}/explain"],
             ["GET", "/api/documents/source-types"],
             ["GET", "/api/documents/{id}"],
             ["POST", "/api/documents/{id}/process"],
@@ -311,19 +318,26 @@ async def test_stats_optional_associations_and_crime_types(officer_client, db):
             raise UndefinedTable()
         if "GROUP BY ct.crime_name" in sql:
             return [{"crime_name": "Fraud", "count": 4}]
-        if "GROUP BY city" in sql:
+        if "GROUP BY l.city" in sql:
             return [{"city": "Mumbai", "count": 3}]
-        if "FROM cases" in sql:
-            return [{"count": 10}]
-        return [{"count": 5}]
+        if "GROUP BY status" in sql:
+            return [{"status": "Under investigation", "count": 6}]
+        if "FROM case_documents" in sql:
+            return [{"count": 12}]
+        if "FROM persons" in sql:
+            return [{"count": 5}]
+        return [{"count": 10}]
 
     db.query.side_effect = query
+    # Totals are per case now: people and documents are counted as case context, not as the subject.
     assert (await officer_client.get("/api/stats")).json() == {
-        "totalCriminals": 5,
         "totalCases": 10,
+        "totalPeople": 5,
+        "totalDocuments": 12,
         "tracedConnections": 0,
         "tagCounts": [["Fraud", 4]],
         "cityCounts": [["Mumbai", 3]],
+        "statusCounts": [["Under investigation", 6]],
     }
     db.query.side_effect = None
     db.query.return_value = [{"crime_name": "Fraud"}]
@@ -333,26 +347,30 @@ async def test_stats_optional_associations_and_crime_types(officer_client, db):
 async def test_workspace_scopes_every_query_to_cookie(officer_client, db):
     async def query(sql, params=()):
         assert params[0] == 7
-        if "SELECT person_id" in sql:
-            return [{"person_id": "P001"}]
-        if "SELECT p.person_id" in sql:
-            return [{"person_id": "P001", "name": "Example", "crime_tags": [None, "Fraud"]}]
+        if "SELECT case_id FROM officer_pinned_case" in sql:
+            return [{"case_id": "FIR-2026-0142"}]
+        if "FROM officer_case_list" in sql:
+            return [{"case_id": "FIR-2026-0142", "reference": "FIR/142/2026",
+                     "title": "Harbour Road theft", "case_status": "Under investigation",
+                     "crime_name": "Theft"}]
         return []
 
     db.query.side_effect = query
     assert (await officer_client.get("/api/workspace")).json() == {
-        "pinnedId": "P001",
-        "workingList": [{"id": "P001", "name": "Example", "crimeTags": ["Fraud"]}],
+        "pinnedId": "FIR-2026-0142",
+        "workingList": [{"id": "FIR-2026-0142", "reference": "FIR/142/2026",
+                         "title": "Harbour Road theft", "status": "Under investigation",
+                         "crimeTags": ["Theft"]}],
     }
     assert (await officer_client.put("/api/workspace/pin", json={})).status_code == 400
-    body = {"personId": "P001", "officerId": 999}
+    body = {"caseId": "FIR-2026-0142", "officerId": 999}
     assert (await officer_client.put("/api/workspace/pin", json=body)).json() == {
-        "pinnedId": "P001"
+        "pinnedId": "FIR-2026-0142"
     }
     assert (await officer_client.delete("/api/workspace/pin")).json() == {"pinnedId": None}
     assert (await officer_client.post("/api/workspace/list", json=body)).status_code == 201
     assert (await officer_client.post("/api/workspace/list", json={})).status_code == 400
-    assert (await officer_client.delete("/api/workspace/list/P001")).json() == {"ok": True}
+    assert (await officer_client.delete("/api/workspace/list/FIR-2026-0142")).json() == {"ok": True}
 
 
 @pytest.mark.parametrize(

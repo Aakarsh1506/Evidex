@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
-import { fetchCriminalNetwork } from '../api/criminals';
+import { fetchCaseNetwork } from '../api/cases';
 import './RelationGraph.css';
 import { useTranslation } from '../i18n';
 
@@ -127,7 +127,7 @@ export default function RelationGraph({ mainCriminal, network: suppliedNetwork, 
   useEffect(() => {
     if (suppliedNetwork) return;
     const controller = new AbortController();
-    fetchCriminalNetwork(mainCriminal.id, { signal: controller.signal })
+    fetchCaseNetwork(mainCriminal.id, { signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted) setResult({ id: mainCriminal.id, data }); })
       .catch((err) => { if (!controller.signal.aborted) setResult({ id: mainCriminal.id, error: err.message }); });
     return () => controller.abort();
@@ -195,7 +195,7 @@ export default function RelationGraph({ mainCriminal, network: suppliedNetwork, 
     onSelectionChange?.(activeSelection ? {
       type: activeSelection.kind ? 'node' : 'edge',
       id: activeSelection.id,
-      personId: activeSelection.originPersonId || mainCriminal.id,
+      recordId: activeSelection.originRecordId || mainCriminal.id,
       label: activeSelection.kind ? activeSelection.label : `${network.nodes.find((node) => node.id === activeSelection.source)?.label || 'Record'} ${activeSelection.bidirectional ? '↔' : '→'} ${activeSelection.label} ${activeSelection.bidirectional ? '↔' : '→'} ${network.nodes.find((node) => node.id === activeSelection.target)?.label || 'Record'}`,
     } : null);
   }, [activeSelection, network, onSelectionChange, mainCriminal.id]);
@@ -246,7 +246,7 @@ export default function RelationGraph({ mainCriminal, network: suppliedNetwork, 
             {relation.provenance && <span className="relation-graph__panel-meta">{t("sourceLabel")}: {relation.provenance}</span>}
           </div>)}
           <div className="relation-graph__panel-actions">
-            {activeSelection.personId && activeSelection.personId !== String(mainCriminal.id) && onNodeClick && <button className="rg-btn" type="button" onClick={() => onNodeClick(activeSelection.personId)}>{t("openProfile")}</button>}
+            {activeSelection.caseId && activeSelection.caseId !== String(mainCriminal.id) && onNodeClick && <button className="rg-btn" type="button" onClick={() => onNodeClick(activeSelection.caseId)}>{t("openCaseFile")}</button>}
             <button className="rg-btn" type="button" onClick={() => inspect('')}>{t("clearSelection") || "Clear selection"}</button>
           </div>
         </div>}</div>

@@ -22,6 +22,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/documents", tags=["Documents"])
 MAX_FILE_SIZE = 20 * 1024 * 1024
 
+# Types the browser can display in place, so "view original" does not force a download.
+# Deliberately excludes anything the browser would execute as markup: every entry is either
+# a plain image, a PDF, or text served with X-Content-Type-Options: nosniff below.
+# TIFF, DOCX and SQLite exports stay downloads — a browser cannot render them.
+VIEWABLE_INLINE = frozenset({
+    "application/pdf", "image/png", "image/jpeg",
+    "text/plain", "text/csv", "application/json", "application/sql",
+})
+
 
 def map_document(row):
     return {
@@ -324,7 +333,7 @@ async def get_document(document_id: int, request: Request, officer=Depends(requi
         content = await load_document_file(request.app.state.db, request.app.state.settings.upload_dir, doc)
         if content is None:
             raise APIError("Document not found", 404)
-        disposition = "inline" if doc["mime_type"] in ("application/pdf", "image/png", "image/jpeg") else "attachment"
+        disposition = "inline" if doc["mime_type"] in VIEWABLE_INLINE else "attachment"
         name = doc["original_name"]
         encoded = quote(name)
         return Response(

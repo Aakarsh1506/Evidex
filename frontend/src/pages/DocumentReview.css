@@ -63,3 +63,17 @@
 .review-table th, .review-table td { border-bottom: 1px solid var(--card-border); padding: 7px 10px; text-align: left; white-space: nowrap; }
 .review-table th { color: var(--text-dim); font-family: var(--font-type); text-transform: uppercase; font-size: .72rem; letter-spacing: .5px; position: sticky; top: 0; background: #141414; }
 .review-table tbody tr:hover { background: #ffffff06; }
+
+.review-view-original {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid var(--accent, #c9a463);
+  border-radius: 6px;
+  color: var(--accent, #c9a463);
+  font: inherit;
+  cursor: pointer;
+}
+.review-view-original:hover { background: var(--accent, #c9a463); color: #101010; }

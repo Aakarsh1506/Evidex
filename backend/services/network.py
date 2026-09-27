@@ -1,7 +1,10 @@
 NETWORK_PATH_LIMIT = 1000
-# Explore four hops, allowing crime types only at the end of a path.
-NETWORK_QUERY = f"""
-  MATCH path = (root:Person {{person_id: $id}})-[*0..4]-(connected)
+
+
+def network_query(root="(root:Person {person_id: $id})"):
+    # Explore four hops, allowing crime types only at the end of a path.
+    return f"""
+  MATCH path = {root}-[*0..4]-(connected)
   WHERE none(node IN nodes(path)[0..-1] WHERE node:CrimeType)
   RETURN path
   ORDER BY length(path), elementId(connected)
@@ -9,9 +12,21 @@ NETWORK_QUERY = f"""
 """
 
 
+NETWORK_QUERY = network_query()
+CASE_NETWORK_QUERY = network_query("(root:Case {case_id: $id})")
+
+
+async def fetch_case_network(case_id, run_cypher):
+    return await run_network(CASE_NETWORK_QUERY, case_id, run_cypher)
+
+
 async def fetch_network(person_id, run_cypher):
+    return await run_network(NETWORK_QUERY, person_id, run_cypher)
+
+
+async def run_network(query, root_id, run_cypher):
     # Request one extra path to detect when the displayed network is truncated.
-    records = await run_cypher(NETWORK_QUERY, {"id": person_id})
+    records = await run_cypher(query, {"id": root_id})
     if not records:
         return None
     return {
@@ -70,6 +85,7 @@ def serialize_network(records):
                 "label": name,
                 "displayLabel": f"{name}\n{subtitle}" if node.get("name") else name,
                 "personId": str(node["person_id"]) if node.get("person_id") is not None else None,
+                "caseId": str(node["case_id"]) if node.get("case_id") is not None else None,
                 "alias": node.get("alias") or None,
                 "city": node.get("city") or None,
                 "provenance": node.get("source") or None,

@@ -3,10 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import BackButton from "../components/BackButton";
 import DocumentActions from "../components/DocumentActions";
 import DocumentProgress from "../components/DocumentProgress";
+import DocumentViewer from "../components/DocumentViewer";
 import { useTranslation } from "../i18n";
 import {
   fetchDocuments, fetchDocument, fetchSourceTypes, uploadDocument,
-  documentFileUrl,
 } from "../api/documents";
 import "./UploadDoc.css";
 
@@ -30,6 +30,7 @@ export default function UploadDoc() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(null);
   const [error, setError] = useState(null);
+  const [viewing, setViewing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -127,6 +128,7 @@ export default function UploadDoc() {
       </>}
     </section>
     {error && <p role="alert" className="upload-error">{error}</p>}
+    <div className={`doc-layout ${selected !== null ? "doc-layout-split" : ""}`}>
     {loading ? <p role="status" className="empty-note">{t("loadingRecords")}</p> :
       <div className="doc-grid">
         {documents.map((doc) => <article className="doc-card" key={doc.id}>
@@ -146,7 +148,7 @@ export default function UploadDoc() {
     {selected !== null && <section className="doc-preview extraction-detail" aria-live="polite">
       <div className="doc-preview-header">
         <h2>{detail?.name || t("revLoadingExtraction")}</h2>
-        <button className="doc-preview-close" onClick={() => { setSelected(null); setDetail(null); }}>{t("close")}</button>
+        <button className="doc-preview-close" onClick={() => { setSelected(null); setDetail(null); setViewing(false); }}>{t("close")}</button>
       </div>
       {detail && <>
         <p role="status">{STATUS[detail.status]}</p>
@@ -154,7 +156,11 @@ export default function UploadDoc() {
         <DocumentActions document={detail} onUpdated={updatedDocument}
           onRemoved={removedDocument} onError={setError} />
         {detail.processingError && <p role="alert" className="upload-error">{detail.processingError}</p>}
-        <p><a href={documentFileUrl(detail.id)} target="_blank" rel="noreferrer">{t("openOriginal")}</a></p>
+        <p className="doc-original-row">
+          <button type="button" className="stamp-btn small" onClick={() => setViewing(true)}>{t("viewOriginal")}</button>
+        </p>
+        {viewing && <DocumentViewer documentId={detail.id} name={detail.name}
+          mimeType={detail.type} onClose={() => setViewing(false)} />}
         {detail.extraction && <>
           <p><Link to={`/documents/${detail.id}/review`}>{t("upOpenReview")}</Link></p>
           <h3>{entities.length} entities · {relationships.length} relationships</h3>
@@ -177,5 +183,6 @@ export default function UploadDoc() {
           <pre className="extracted-text">{detail.text}</pre></details>}
       </>}
     </section>}
+    </div>
   </div>;
 }

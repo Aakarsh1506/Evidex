@@ -160,9 +160,9 @@ function LoginPage() {
               comes from the server's response, not from what was typed in. */}
           <div className="case-face case-face-back">
             <div className="seal" aria-hidden="true">
-              <span>CNA</span>
+              <span>DMS</span>
             </div>
-            <h2 className="back-title">Criminal Network Analysis</h2>
+            <h2 className="back-title">Secure Document Management System</h2>
             <p className="back-subtitle">{t("loginConfirmed")}</p>
 
             <div className="back-summary">

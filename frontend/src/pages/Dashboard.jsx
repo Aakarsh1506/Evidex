@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchCriminalById, fetchCrimeTypes } from "../api/criminals";
+import { fetchCaseById, fetchCaseNetwork, fetchCrimeTypes } from "../api/cases";
 import { fetchStats } from "../api/stats";
-import { fetchWorkspace, unpinCriminal, removeFromWorkingList } from "../api/workspace";
+import { fetchWorkspace, unpinCase, removeFromWorkingList } from "../api/workspace";
 import RelationGraph from "../components/RelationGraph";
 import "./Dashboard.css";
 import { useTranslation } from "../i18n";
@@ -18,7 +18,8 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
 
   const [pinnedId, setPinnedIdState] = useState(null);
-  const [pinnedCriminal, setPinnedCriminal] = useState(null);
+  const [pinnedCase, setPinnedCase] = useState(null);
+  const [pinnedNetwork, setPinnedNetwork] = useState(null);
   const [workingList, setWorkingList] = useState([]);
 
   useEffect(() => {
@@ -37,22 +38,24 @@ function Dashboard() {
 
   useEffect(() => {
     if (!pinnedId) {
-      setPinnedCriminal(null);
+      setPinnedCase(null);
+      setPinnedNetwork(null);
       return;
     }
-    let cancelled = false;
-    fetchCriminalById(pinnedId).then((data) => {
-      if (cancelled || !data) return;
-      setPinnedCriminal(data.criminal);
+    const controller = new AbortController();
+    fetchCaseById(pinnedId).then((data) => {
+      if (!controller.signal.aborted) setPinnedCase(data);
     });
-    return () => {
-      cancelled = true;
-    };
+    // The graph is optional: the pinned card still renders without Neo4j.
+    fetchCaseNetwork(pinnedId, { signal: controller.signal })
+      .then((data) => { if (!controller.signal.aborted) setPinnedNetwork(data); })
+      .catch(() => {});
+    return () => controller.abort();
   }, [pinnedId]);
 
   const toggleTag = (tag) => {
     setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+      prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag]
     );
   };
 
@@ -69,17 +72,17 @@ function Dashboard() {
 
   const handleUnpin = async () => {
     try {
-      await unpinCriminal();
+      await unpinCase();
       setPinnedIdState(null);
     } catch (err) {
-      console.error("Failed to unpin criminal", err);
+      console.error("Failed to unpin case", err);
     }
   };
 
   const handleRemoveFromList = async (id) => {
     try {
       await removeFromWorkingList(id);
-      setWorkingList((prev) => prev.filter((c) => c.id !== id));
+      setWorkingList((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error("Failed to remove from list", err);
     }
@@ -87,7 +90,8 @@ function Dashboard() {
 
   const tagCounts = stats?.tagCounts || [];
   const cityCounts = stats?.cityCounts || [];
-  const maxTagCount = Math.max(...tagCounts.map((t) => t[1]), 1);
+  const statusCounts = stats?.statusCounts || [];
+  const maxTagCount = Math.max(...tagCounts.map((row) => row[1]), 1);
 
   return (
     <div className="board-page">
@@ -132,50 +136,50 @@ function Dashboard() {
         <h3 className="working-heading">{t("pinned")}</h3>
 
         <div className="working-grid">
-          {/* Map now occupies the full wide (2fr) column instead of a single narrow slot */}
           <div className="working-col working-map-col">
-            {pinnedCriminal ? (
-              <>
-                <div className="graph-frame mini">
-                  <RelationGraph
-                    mainCriminal={pinnedCriminal}
-                    onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
-                    height={560}
-                  />
-                </div>
-              </>
+            {pinnedCase && pinnedNetwork ? (
+              <div className="graph-frame mini">
+                <RelationGraph
+                  key={pinnedCase.id}
+                  mainCriminal={{ id: pinnedCase.id, name: pinnedCase.reference }}
+                  network={pinnedNetwork}
+                  onNodeClick={(caseId) => navigate(`/case/${encodeURIComponent(caseId)}`)}
+                  height={560}
+                />
+              </div>
             ) : (
               <div className="working-empty">
-                <p className="empty-note">{t("noWorking")}</p>
+                <p className="empty-note">{t(pinnedCase ? "caseNoNetwork" : "noWorking")}</p>
               </div>
             )}
           </div>
 
-          {/* Narrow (1fr) column split into two stacked halves: profile on top, list below */}
           <div className="working-col working-side-col">
             <div className="working-side-top">
-              {pinnedCriminal ? (
+              {pinnedCase ? (
                 <div className="mini-dossier">
-                  <img src={pinnedCriminal.photo} alt={pinnedCriminal.name} className="mini-photo" />
-                  <h4>{pinnedCriminal.name}</h4>
-                  <div className="dossier-row"><span>{t("lastSeen")}</span><span>{pinnedCriminal.lastSeen}</span></div>
+                  <h4>{pinnedCase.title || pinnedCase.crime || t("caseUntitled")}</h4>
+                  <div className="dossier-row"><span>{t("caseReference")}</span><span>{pinnedCase.reference}</span></div>
+                  <div className="dossier-row"><span>{t("status")}</span><span>{pinnedCase.status || "—"}</span></div>
+                  <div className="dossier-row"><span>{t("casePeople")}</span><span>{pinnedCase.people.length}</span></div>
+                  <div className="dossier-row"><span>{t("caseDocuments")}</span><span>{pinnedCase.documents.length}</span></div>
                   <div className="tag-row">
-                    {pinnedCriminal.crimeTags.map((tag) => (
+                    {pinnedCase.crimeTags.map((tag) => (
                       <span key={tag} className="tag-stamp">{tag}</span>
                     ))}
                   </div>
                   <div className="mini-actions">
-                    <button className="stamp-btn small" onClick={() => navigate(`/criminal/${pinnedCriminal.id}`)}>
-                      {t("openFile") || "Open file"}
+                    <button className="stamp-btn small" onClick={() => navigate(`/case/${encodeURIComponent(pinnedCase.id)}`)}>
+                      {t("openFile")}
                     </button>
                     <button className="stamp-btn small" onClick={handleUnpin}>
-                      {t("unpin") || "Unpin"}
+                      {t("unpin")}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="working-empty">
-                <p className="empty-note">{t("noWorking")}</p>
+                  <p className="empty-note">{t("noWorking")}</p>
                 </div>
               )}
             </div>
@@ -183,22 +187,23 @@ function Dashboard() {
             <div className="working-side-divider" />
 
             <div className="working-side-bottom">
-              <h4 className="working-list-title">{t("onTheList") || "On the list"}</h4>
+              <h4 className="working-list-title">{t("onTheList")}</h4>
               {workingList.length === 0 ? (
-                <p className="empty-note">{t("noCases") || "No cases added yet"}</p>
+                <p className="empty-note">{t("noCases")}</p>
               ) : (
                 <ul className="working-list-items">
-                  {workingList.map((c) => (
-                    <li key={c.id}>
-                      <div className="working-list-info" onClick={() => navigate(`/criminal/${c.id}`)}>
-                        <strong>{c.name}</strong>
+                  {workingList.map((item) => (
+                    <li key={item.id}>
+                      <div className="working-list-info" onClick={() => navigate(`/case/${encodeURIComponent(item.id)}`)}>
+                        <strong>{item.reference}</strong>
+                        {item.title ? <span className="working-list-sub">{item.title}</span> : null}
                         <div className="tag-row">
-                          {c.crimeTags.map((tag) => (
+                          {item.crimeTags.map((tag) => (
                             <span key={tag} className="tag-stamp small">{tag}</span>
                           ))}
                         </div>
                       </div>
-                      <button className="list-remove-btn" onClick={() => handleRemoveFromList(c.id)}>
+                      <button className="list-remove-btn" onClick={() => handleRemoveFromList(item.id)}>
                         ×
                       </button>
                     </li>
@@ -213,14 +218,14 @@ function Dashboard() {
       <div className="pinboard">
         <div className="pin-card card-1">
           <span className="pin" />
-              <h3>{t("recordsOnFile")}</h3>
-          <div className="pin-number">{stats ? stats.totalCriminals : "…"}</div>
-          <p className="pin-note">{t("tracked") || "Criminals currently tracked"}</p>
+          <h3>{t("casesOnFileTitle")}</h3>
+          <div className="pin-number">{stats ? stats.totalCases : "…"}</div>
+          <p className="pin-note">{t("tracked")}</p>
         </div>
-      <div className="pin-card card-4">
+        <div className="pin-card card-4">
           <span className="pin" />
-              <h3>{t("tracedConnections")}</h3>
-          <div className="pin-number">{stats ? stats.tracedConnections : "…"}</div>
+          <h3>{t("documentsOnFile")}</h3>
+          <div className="pin-number">{stats ? stats.totalDocuments : "…"}</div>
           <p className="pin-note">{t("linksKnown")}</p>
         </div>
         <div className="pin-card card-2 wide">
@@ -241,6 +246,19 @@ function Dashboard() {
 
         <div className="pin-card card-3">
           <span className="pin" />
+          <h3>{t("caseStatusBreakdown")}</h3>
+          <ul className="city-list">
+            {statusCounts.map(([status, count]) => (
+              <li key={status}>
+                <span>{status}</span>
+                <span>{count}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="pin-card card-3">
+          <span className="pin" />
           <h3>{t("citiesWatch")}</h3>
           <ul className="city-list">
             {cityCounts.map(([city, count]) => (
@@ -251,7 +269,6 @@ function Dashboard() {
             ))}
           </ul>
         </div>
-
       </div>
     </div>
   );

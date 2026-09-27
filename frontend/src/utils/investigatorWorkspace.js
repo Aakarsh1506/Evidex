@@ -1,22 +1,24 @@
 // The workspace survives navigation and reloads within a browser session (per tab),
-// and is cleared on logout. Networks are re-fetched; only the people and chat are stored.
-export const WORKSPACE_KEY = "cna.investigator.workspace";
+// and is cleared on logout. Networks are re-fetched; only the cases and chat are stored.
+// The key carries a version: a workspace saved with person ids cannot be replayed
+// against the case endpoints, so an older entry is ignored rather than re-fetched.
+export const WORKSPACE_KEY = "cna.investigator.workspace.cases";
 
 export function readWorkspace() {
   try {
     const saved = JSON.parse(sessionStorage.getItem(WORKSPACE_KEY) || "{}");
     return {
-      people: Array.isArray(saved.people) ? saved.people.filter((person) => person?.id) : [],
+      records: Array.isArray(saved.records) ? saved.records.filter((record) => record?.id) : [],
       messages: Array.isArray(saved.messages) ? saved.messages.filter((message) => message?.text) : [],
     };
   } catch {
-    return { people: [], messages: [] };
+    return { records: [], messages: [] };
   }
 }
 
-export function saveWorkspace(people, messages) {
+export function saveWorkspace(records, messages) {
   try {
-    sessionStorage.setItem(WORKSPACE_KEY, JSON.stringify({ people, messages: messages.slice(-20) }));
+    sessionStorage.setItem(WORKSPACE_KEY, JSON.stringify({ records, messages: messages.slice(-20) }));
   } catch {
     // A full or unavailable session store only costs persistence, never the workspace itself.
   }
@@ -44,12 +46,15 @@ function distance(a, b) {
   return row[b.length];
 }
 
-export function searchPeople(people, query) {
+// Fuzzy search over any record kind; the caller names which fields to match.
+// The first field is also the tie-break label.
+export function searchRecords(records, query, fields = ["name", "id"]) {
   const words = normalize(query).split(/\s+/).filter(Boolean);
   if (!words.length) return [];
-  return people.map((person) => {
-    const fields = [person.name, person.id].map(normalize);
-    const tokens = fields.flatMap((field) => [field, ...field.split(/\s+/)]);
+  const label = (record) => String(record[fields[0]] ?? record.id);
+  return records.map((record) => {
+    const haystack = fields.map((key) => normalize(record[key]));
+    const tokens = haystack.flatMap((field) => [field, ...field.split(/\s+/)]);
     const score = words.reduce((total, word) => {
       const best = Math.min(...tokens.map((token) => {
         if (token === word) return 0;
@@ -60,22 +65,22 @@ export function searchPeople(people, query) {
       }));
       return total + best;
     }, 0);
-    return { person, score };
+    return { record, score };
   }).filter(({ score }) => Number.isFinite(score))
-    .sort((a, b) => a.score - b.score || a.person.name.localeCompare(b.person.name))
-    .slice(0, 8).map(({ person }) => person);
+    .sort((a, b) => a.score - b.score || label(a.record).localeCompare(label(b.record)))
+    .slice(0, 8).map(({ record }) => record);
 }
 
 export function mergeNetworks(entries) {
   const nodes = new Map();
   const edges = new Map();
-  for (const { person, network } of entries) {
+  for (const { record, network } of entries) {
     for (const node of network.nodes) {
       const previous = nodes.get(node.id);
-      if (!previous || node.depth < previous.depth) nodes.set(node.id, { ...node, originPersonId: person.id });
+      if (!previous || node.depth < previous.depth) nodes.set(node.id, { ...node, originRecordId: record.id });
     }
     for (const edge of network.edges) {
-      if (!edges.has(edge.id)) edges.set(edge.id, { ...edge, originPersonId: person.id });
+      if (!edges.has(edge.id)) edges.set(edge.id, { ...edge, originRecordId: record.id });
     }
   }
   return {

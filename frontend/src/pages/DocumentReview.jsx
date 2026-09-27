@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import DocumentActions from "../components/DocumentActions";
 import IdentityReviewDialog from "../components/IdentityReviewDialog";
 import DocumentProgress from "../components/DocumentProgress";
-import { confirmDocument, fetchDocument, documentFileUrl, fetchIdentitySuggestions } from "../api/documents";
+import DocumentViewer from "../components/DocumentViewer";
+import { confirmDocument, fetchDocument, fetchIdentitySuggestions } from "../api/documents";
 import { useTranslation } from "../i18n";
 import { parseImportedRows } from "../utils/importedRows";
 import "./CriminalProfile.css";
@@ -26,6 +27,7 @@ export default function DocumentReview() {
   const [confirming, setConfirming] = useState(false);
   const [identityReview, setIdentityReview] = useState(null);
   const [reload, setReload] = useState(0);
+  const [viewing, setViewing] = useState(false);
   const [selection, setSelection] = useState({ key: null, entities: {}, relationships: {} });
   const snapshot = JSON.stringify(document?.extraction || null);
   const selectionKey = `${id}:${snapshot}`;
@@ -141,7 +143,11 @@ export default function DocumentReview() {
           {excludedEntities.length > 0 && <a href="#review-excluded-entities">{t("revExcludedEntities")} <small>{excludedEntities.length}</small></a>}
           <a href="#review-source">{t(importedTables.length ? "revImportedRows" : "revSourceText")}</a>
         </nav>
-        <a href={documentFileUrl(document.id)} target="_blank" rel="noreferrer">{t("openOriginal")} ↗</a>
+        <button type="button" className="review-view-original" onClick={() => setViewing(true)}>
+          {t("viewOriginal")}
+        </button>
+        {viewing && <DocumentViewer documentId={document.id} name={document.name}
+          mimeType={document.type} onClose={() => setViewing(false)} />}
       </aside>
 
       <div className="review-records">

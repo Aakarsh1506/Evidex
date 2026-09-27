@@ -15,3 +15,7 @@ class OfficerBody(LoginBody):
 
 class PersonBody(BaseModel):
     personId: StrictStr | None = None
+
+
+class CaseBody(BaseModel):
+    caseId: StrictStr | None = None

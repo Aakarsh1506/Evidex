@@ -1,0 +1,94 @@
+.viewer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+}
+
+.viewer-panel {
+  --viewer-border: #2c2c2c;
+  --viewer-text: #f2f2f2;
+  --viewer-dim: #8f8f8f;
+  --viewer-accent: #c9a463;
+  width: min(1000px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #0d0d0d;
+  border: 1px solid var(--viewer-border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.viewer-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--viewer-border);
+  flex-wrap: wrap;
+}
+.viewer-head h3 {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--viewer-text);
+  overflow-wrap: anywhere;
+}
+.viewer-note {
+  margin: 4px 0 0;
+  font-size: 0.72rem;
+  color: var(--viewer-dim);
+}
+.viewer-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.viewer-actions .stamp-btn {
+  color: var(--viewer-accent);
+  border: 1px solid var(--viewer-accent);
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.viewer-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px;
+  background: #111;
+}
+
+.viewer-frame {
+  width: 100%;
+  height: min(72vh, 900px);
+  border: none;
+  background: #fff;
+}
+
+.viewer-image { display: block; max-width: 100%; margin: 0 auto; }
+
+.viewer-text {
+  margin: 0;
+  font-family: var(--font-type, monospace);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--viewer-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.viewer-error { color: #d93636; font-size: 0.82rem; }
+
+@media (max-width: 600px) {
+  .viewer-backdrop { padding: 12px 8px; }
+  .viewer-frame { height: 65vh; }
+}
+
+/* Scrollbar hidden on this panel; scrolling still works by wheel, trackpad and keyboard. */
+.viewer-body {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* legacy Edge */
+}
+.viewer-body::-webkit-scrollbar { width: 0; height: 0; }

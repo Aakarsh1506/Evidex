@@ -201,3 +201,31 @@ async def test_file_saved_before_database_storage_is_served_and_shared(officer_c
     assert "filename*=utf-8''Old%20FIR.pdf" in download.headers["content-disposition"]
     copy = next(call for call in db.query.call_args_list if call.args[0].lstrip().startswith("INSERT INTO officer_document_files"))
     assert copy.args[1] == (4, b"%PDF legacy")
+
+
+@pytest.mark.parametrize("mime_type,expected", [
+    # Displayable in place, so "view original" shows the source instead of downloading it.
+    ("application/pdf", "inline"),
+    ("image/png", "inline"),
+    ("image/jpeg", "inline"),
+    ("text/plain", "inline"),
+    ("text/csv", "inline"),
+    ("application/json", "inline"),
+    ("application/sql", "inline"),
+    # A browser cannot render these, so they stay downloads.
+    ("image/tiff", "attachment"),
+    ("application/vnd.sqlite3", "attachment"),
+    ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "attachment"),
+])
+async def test_viewable_documents_are_served_inline(officer_client, db, mime_type, expected):
+    document = {"document_id": 9, "stored_name": "source.bin", "mime_type": mime_type,
+                "original_name": "source.bin"}
+    body = b"FIRST INFORMATION REPORT"
+    db.query.side_effect = lambda sql, params=(): (
+        [{"content": body}] if "officer_document_files" in sql else [document]
+    )
+    response = await officer_client.get("/api/documents/9/file")
+    assert response.status_code == 200 and response.content == body
+    assert response.headers["content-disposition"].startswith(f"{expected};")
+    # Inline text must never be sniffed into something executable.
+    assert response.headers["x-content-type-options"] == "nosniff"

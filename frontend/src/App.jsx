@@ -4,11 +4,10 @@ import RequireAuth from "./components/RequireAuth";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
-import CriminalList from "./pages/CriminalList";
-import CriminalProfile from "./pages/CriminalProfile";
+import CaseRegister from "./pages/CaseRegister";
+import CaseFile from "./pages/CaseFile";
 import UploadDoc from "./pages/UploadDoc";
 import DocumentReview from "./pages/DocumentReview";
-import CriminalListPage from "./pages/CriminalListPage";
 import AdminPanel from "./pages/AdminPanel";
 import InvestigatorAnalysis from "./pages/InvestigatorAnalysis";
 import "./App.css";
@@ -29,13 +28,13 @@ function AppLayout() {
 
         <Route element={<RequireAuth />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/search" element={<CriminalList />} />
-          <Route path="/criminal/:id" element={<CriminalProfile />} />
+          <Route path="/search" element={<CaseRegister />} />
+          <Route path="/case/:id" element={<CaseFile />} />
           <Route path="/analysis/:id" element={<InvestigatorAnalysis />} />
           <Route path="/analysis" element={<InvestigatorAnalysis />} />
           <Route path="/upload" element={<UploadDoc />} />
           <Route path="/documents/:id/review" element={<DocumentReview />} />
-          <Route path="/criminal-list" element={<CriminalListPage />} />
+          <Route path="/cases" element={<CaseRegister />} />
           <Route path="/admin" element={<AdminPanel />} />
         </Route>
       </Routes>

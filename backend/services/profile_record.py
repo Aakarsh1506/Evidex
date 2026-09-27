@@ -152,7 +152,8 @@ async def request_record(client, settings, messages, schema, output_budget):
     if settings.extraction_provider == 'ollama':
         return await client.post(settings.ollama_base_url.rstrip('/') + '/api/chat', json={
             'model': settings.ollama_model, 'messages': messages, 'stream': False, 'think': False,
-            'format': schema, 'options': {'temperature': .1, 'num_predict': output_budget, 'num_ctx': 16384},
+            'format': schema, 'keep_alive': '30m',
+            'options': {'temperature': .1, 'num_predict': output_budget, 'num_ctx': 16384},
         }, timeout=settings.ollama_timeout)
     if not settings.groq_api_key:
         raise APIError('Groq API key is not configured.', 503)
@@ -163,7 +164,7 @@ async def request_record(client, settings, messages, schema, output_budget):
         }, timeout=60)
 
 
-def read_sections(response, settings, allowed_sources):
+def read_sections(response, settings, allowed_sources, categories=CATEGORIES):
     """Return (sections, reason); sections is None when the answer cannot be used."""
     if not response.is_success:
         return None, f'provider HTTP {response.status_code}'
@@ -178,20 +179,37 @@ def read_sections(response, settings, allowed_sources):
             raw = choice['message']['content']
         if finish not in (None, 'stop'):
             return None, f'output stopped early ({finish})'
-        return validate_sections(json.loads(raw), allowed_sources), 'ok'
+        return validate_sections(json.loads(raw), allowed_sources, categories), 'ok'
     except ValueError as exc:
         return None, str(exc) or 'invalid JSON'
     except (KeyError, TypeError, IndexError) as exc:
         return None, f'unexpected response shape ({type(exc).__name__})'
 
 
-def validate_sections(result, sources):
-    if not isinstance(result, dict) or set(result) != {'sections'} or not isinstance(result['sections'], list) or not result['sections']:
+def read_section_list(result):
+    """Providers disagree on the envelope: an object keyed 'sections', a bare array of
+    sections, or an object with extra keys alongside. Read the sections out of any of them
+    rather than discarding a usable answer over its wrapper."""
+    if isinstance(result, list):
+        return result
+    if isinstance(result, dict):
+        sections = result.get('sections')
+        if isinstance(sections, list):
+            return sections
+        # A single section object, returned without any envelope at all.
+        if 'category' in result and isinstance(result.get('items'), list):
+            return [result]
+    return None
+
+
+def validate_sections(result, sources, categories=CATEGORIES):
+    sections = read_section_list(result)
+    if not sections:
         raise ValueError('no sections returned')
     grouped, seen_text, dropped = {}, set(), 0
-    for section in result['sections']:
+    for section in sections:
         # A model may add fields or one bad citation; keep every usable item and drop the rest.
-        if not isinstance(section, dict) or section.get('category') not in CATEGORIES \
+        if not isinstance(section, dict) or section.get('category') not in categories \
                 or not isinstance(section.get('items'), list):
             dropped += 1
             continue
@@ -211,4 +229,4 @@ def validate_sections(result, sources):
     if dropped:
         logger.info('AI record: kept %d item(s), dropped %d unusable one(s)',
                     sum(len(items) for items in grouped.values()), dropped)
-    return [{'category': category, 'items': grouped[category]} for category in CATEGORIES if category in grouped]
+    return [{'category': category, 'items': grouped[category]} for category in categories if category in grouped]

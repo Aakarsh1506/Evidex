@@ -48,7 +48,9 @@ class Database:
 
     async def ensure_schema(self):
         # Create app-owned tables without replacing existing records.
-        for filename in ("officers.sql", "workspace.sql", "documents.sql", "ingestion.sql"):
+        # cases.sql runs last: it extends tables that ingestion.sql creates or relaxes.
+        for filename in ("officers.sql", "workspace.sql", "documents.sql", "ingestion.sql",
+                         "cases.sql"):
             await self.query((BASE_DIR / "sql" / filename).read_text())
 
     @asynccontextmanager

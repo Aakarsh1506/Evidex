@@ -30,19 +30,19 @@ function LandingPage() {
     }
   };
 
-  const tapeText = "CRIME SCENE DO NOT CROSS ".repeat(20);
+  const tapeText = "CONFIDENTIAL RESTRICTED ACCESS ".repeat(20);
 
   return (
     <div
       className={`landing-page ${breaking ? "breaching" : ""}`}
       style={{ "--bg-image": `url(${alleyBg})` }}
     >
-      {/* Crossed crime scene tape — click/tap to tear through */}
+      {/* Crossed confidentiality seal — click/tap to tear through */}
       <div
         className={`tape-hero ${breaking ? "breaking" : ""}`}
         role="button"
         tabIndex={0}
-        aria-label="Tear the tape to breach the scene"
+        aria-label="Tear the seal to open the secure archive"
         onClick={handleBreak}
         onKeyDown={handleKeyDown}
       >
@@ -65,17 +65,17 @@ function LandingPage() {
         <div className="snap-flash" aria-hidden="true" />
       </div>
 
-      {/* Content below the tape crossing */}
+      {/* Content below the seal crossing */}
       <div className="cover-content">
         <h1 className="cover-title">
           EVIDEX
           <br />
         </h1>
         <p className="cover-subtitle">
-          Uncover connections. Predict threats. Protect society.
+          Secure every document. Preserve every trail. Protect the case.
         </p>
 
-        <p className="tear-hint">Tap the tape to breach the scene</p>
+        <p className="tear-hint">Tap the seal to open the secure archive</p>
       </div>
 
       {/* Forward push tunnel — sells the "walking into the scene" transition */}

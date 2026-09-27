@@ -11,7 +11,8 @@
         "personId": "P001",
         "alias": "MC",
         "city": "Delhi",
-        "provenance": null
+        "provenance": null,
+        "caseId": null
       },
       {
         "id": "case-b",
@@ -22,7 +23,8 @@
         "personId": null,
         "alias": null,
         "city": null,
-        "provenance": null
+        "provenance": null,
+        "caseId": "C001"
       },
       {
         "id": "person-c",
@@ -33,7 +35,8 @@
         "personId": "P002",
         "alias": null,
         "city": null,
-        "provenance": null
+        "provenance": null,
+        "caseId": null
       }
     ],
     "edges": [

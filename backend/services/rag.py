@@ -92,14 +92,17 @@ async def index_document(db, document_id, text, *, settings=None, client=None):
     return {'chunks': len(chunks), 'embedded': len(vectors), 'mode': 'hybrid' if vectors else 'keyword'}
 
 
-async def retrieve_context(db, officer_id, question, limit=5, *, person_id=None, settings=None, client=None):
+async def retrieve_context(db, officer_id, question, limit=5, *, person_id=None, case_id=None,
+                           settings=None, client=None):
     if not question or not question.strip():
         return []
     limit = min(max(limit, 1), 30)
-    scope = """d.officer_id=%s AND d.confirmed_at IS NOT NULL
+    # One scope clause serves every root record; the kind decides which entity links a document in.
+    kind, canonical_id = ('Case', case_id) if case_id is not None else ('Person', person_id)
+    scope = f"""d.officer_id=%s AND d.confirmed_at IS NOT NULL
         AND (%s::text IS NULL OR EXISTS (
           SELECT 1 FROM extracted_entities e WHERE e.document_id=d.document_id
-            AND e.kind='Person' AND e.canonical_id=%s))"""
+            AND e.kind='{kind}' AND e.canonical_id=%s))"""
     # OR terms avoids requiring every word in a natural-language question to occur.
     terms = ' | '.join(dict.fromkeys(re.findall(r'[^\W_]+', question, re.UNICODE)))
     if not terms:
@@ -110,7 +113,7 @@ async def retrieve_context(db, officer_id, question, limit=5, *, person_id=None,
            FROM document_chunks c JOIN officer_documents d ON d.document_id=c.document_id
            WHERE {scope} AND c.search_vector @@ to_tsquery('simple',%s)
            ORDER BY score DESC,c.chunk_id LIMIT %s""",
-        (terms, officer_id, person_id, person_id, terms, max(30, limit * 3)),
+        (terms, officer_id, canonical_id, canonical_id, terms, max(30, limit * 3)),
     )
     semantic = []
     if settings and client and settings.rag_embedding_model:
@@ -122,7 +125,7 @@ async def retrieve_context(db, officer_id, question, limit=5, *, person_id=None,
                    FROM document_chunks c JOIN officer_documents d ON d.document_id=c.document_id
                    WHERE {scope} AND c.embedding_model=%s AND cardinality(c.embedding)=%s
                    ORDER BY score DESC NULLS LAST,c.chunk_id LIMIT %s""",
-                (vector, officer_id, person_id, person_id, settings.rag_embedding_model, len(vector), max(30, limit * 3)),
+                (vector, officer_id, canonical_id, canonical_id, settings.rag_embedding_model, len(vector), max(30, limit * 3)),
             )
         except APIError:
             logger.warning('Semantic retrieval unavailable; using source-scoped keyword search')
