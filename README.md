@@ -434,6 +434,21 @@ ADMIN_PASSWORD=change_this_admin_password
 
 ### Deployment notes
 
+#### Vercel frontend
+
+Deploy from the **repository root**, where `package.json` and `vercel.json` live. Use these project settings:
+
+| Setting | Value |
+|---|---|
+| Root Directory | Repository root (leave blank) |
+| Framework Preset | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `frontend/dist` |
+
+The build script runs `vite build frontend`, so its output is `frontend/dist`, not a root-level `dist` directory. The checked-in `vercel.json` sets the build command and output directory and serves `index.html` for React page routes such as `/login` and `/dashboard`. Commit and push this configuration, then deploy that commit. See Vercel's [output directory configuration](https://vercel.com/docs/project-configuration/vercel-json#outputdirectory) and [Vite SPA routing](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
+
+This configuration deploys the frontend. The app calls `/api/...`; deploy the backend separately and configure a Vercel rewrite from `/api/:path*` to your deployed backend's `/api/:path*` URL. The SPA fallback excludes `/api` so API requests are not served HTML. The localhost proxy in `frontend/vite.config.js` only runs during local development.
+
 | Scenario | What to do |
 |---|---|
 | **Frontend/backend on different domains** | Set `NODE_ENV=production` so cookies get `secure: true`, and set `sameSite` to `"none"` in `express-backend/routes/auth.js`'s `COOKIE_OPTIONS` — `"lax"` (the local-dev default) gets silently dropped cross-domain. Point `FRONTEND_ORIGIN` at your exact deployed frontend URL; CORS needs it to match exactly. |
