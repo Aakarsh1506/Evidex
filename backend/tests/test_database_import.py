@@ -122,3 +122,83 @@ def test_sample_export_in_docs_imports_cleanly():
         ("FIR-SYN-2026-0198", "OCCURRED_AT", "Vashi"),
     }
     assert all(entity.evidence in text for entity in extraction.entities)
+
+
+def test_fifty_criminal_sample_imports_cleanly():
+    """docs/sample_50_criminals.sql is offered to users; keep it importable."""
+    from collections import Counter
+    from pathlib import Path
+
+    sample = Path(__file__).resolve().parents[2] / "docs" / "sample_50_criminals.sql"
+    text, extraction = import_database(sample.read_bytes(), ".sql", sample.stem)
+    kinds = Counter(entity.kind for entity in extraction.entities)
+    assert kinds["Person"] == 50 and kinds["Case"] == 18
+    assert not extraction.excluded_relationships
+    predicates = Counter(relation.predicate for relation in extraction.relationships)
+    assert predicates["SUSPECT_IN"] and predicates["WITNESS_IN"] and predicates["OF_TYPE"]
+    assert all(entity.evidence in text for entity in extraction.entities)
+    # Crime types arrive in the sentence case the database now uses.
+    assert sorted(e.name for e in extraction.entities if e.kind == "CrimeType") == [
+        "Burglary", "Cheating", "Extortion", "Financial fraud", "Forgery", "Theft"]
+
+
+def test_insert_without_column_names_uses_the_create_table_columns():
+    """pg_dump --inserts omits the column list; the schema in the same file supplies it."""
+    dump = ("CREATE TABLE public.persons (\n"
+            "    person_id character varying(20) NOT NULL,\n"
+            "    name character varying(100) NOT NULL,\n"
+            "    alias character varying(100),\n"
+            "    dob date,\n"
+            "    age integer,\n"
+            "    city character varying(100),\n"
+            "    CONSTRAINT persons_pkey PRIMARY KEY (person_id)\n"
+            ");\n"
+            "CREATE TABLE public.case_people (case_id varchar(20), person_id varchar(20), role text);\n"
+            "INSERT INTO public.persons VALUES ('P001', 'Rohan Mehta', 'Ronny', '1997-04-02', 29, 'Nandipur');\n"
+            "COPY public.case_people FROM stdin;\n"
+            "FIR-1\tP001\tsuspect\n\\.\n")
+    _text, extraction = import_database(dump.encode(), ".sql")
+    person = next(e for e in extraction.entities if e.kind == "Person")
+    assert person.name == "Rohan Mehta" and person.identifier == "P001"
+    assert {a.key: a.value for a in person.attributes} == {
+        "alias": "Ronny", "dob": "1997-04-02", "age": "29", "city": "Nandipur"}
+
+
+def test_export_without_any_column_names_explains_how_to_re_export():
+    dump = "INSERT INTO persons VALUES ('P001', 'Rohan Mehta', 29);\n"
+    with pytest.raises(APIError, match="column-inserts"):
+        import_database(dump.encode(), ".sql")
+
+
+def test_other_schema_names_columns_and_keys_are_followed():
+    """docs/sample_cybercrime_export.sql: different table/column names, backticks, COPY via schema."""
+    from collections import Counter
+    from pathlib import Path
+
+    sample = Path(__file__).resolve().parents[2] / "docs" / "sample_cybercrime_export.sql"
+    text, extraction = import_database(sample.read_bytes(), ".sql", sample.stem)
+    kinds = Counter(entity.kind for entity in extraction.entities)
+    # "firms" is an organization table, not an FIR table.
+    assert kinds == {"Person": 5, "Case": 3, "CrimeType": 3, "Location": 3, "Organization": 2}
+    assert not extraction.excluded_relationships
+    farhan = next(e for e in extraction.entities if e.name == "Farhan Ali")
+    assert farhan.identifier == "CY-01"  # The record ID, never the phone number.
+    assert {a.key: a.value for a in farhan.attributes} == {
+        "alias": "Fizz", "dob": "1994-03-11", "age": "32", "city": "Bengaluru",
+        "state": "Karnataka", "phone": "9845012345"}
+    assert links(extraction) >= {
+        ("Farhan Ali", "SUSPECT_IN", "FIR-CY-2026-071"),
+        ("Suresh Gowda", "WITNESS_IN", "FIR-CY-2026-071"),
+        # offence_id and place_id are followed by what they point at, not by their names.
+        ("FIR-CY-2026-099", "OF_TYPE", "Money laundering"),
+        ("FIR-CY-2026-084", "OCCURRED_AT", "Whitefield")}
+    assert all(entity.evidence in text for entity in extraction.entities)
+
+
+def test_shared_key_values_do_not_create_wrong_links():
+    """crime 3 and location 3 are different records; an ambiguous key links to neither."""
+    dump = ("INSERT INTO crime_types (crime_id, crime_name) VALUES (3, 'Theft');\n"
+            "INSERT INTO locations (location_id, city) VALUES (3, 'Nandipur');\n"
+            "INSERT INTO cases (case_id, crime_id, location_id) VALUES ('FIR-9', 3, 3);\n")
+    _text, extraction = import_database(dump.encode(), ".sql")
+    assert links(extraction) == {("FIR-9", "OF_TYPE", "Theft"), ("FIR-9", "OCCURRED_AT", "Nandipur")}

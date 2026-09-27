@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { cancelDocument, retryDocument } from "../api/documents";
 import RemoveDocumentButton from "./RemoveDocumentButton";
+import { useTranslation } from "../i18n";
 import "./DocumentActions.css";
 
 export default function DocumentActions({ document, disabled, onUpdated, onRemoved, onError }) {
+  const { t } = useTranslation();
   const [retrying, setRetrying] = useState(false);
   const [removing, setRemoving] = useState(false);
   const canProcess = ["stored", "failed", "sync_failed", "cancelled"].includes(document.status);
@@ -28,14 +30,14 @@ export default function DocumentActions({ document, disabled, onUpdated, onRemov
   return <div className="document-actions">
     <div className="document-action-buttons">
       {canProcess && <button type="button" className="stamp-btn" disabled={disabled || retrying || removing}
-        onClick={process}>{retrying ? "Queuing…" : document.status === "sync_failed" ? "Retry saving" : document.status === "cancelled" ? "Process again" : "Process document"}</button>}
+        onClick={process}>{retrying ? t("docQueuing") : document.status === "sync_failed" ? t("docRetrySaving") : document.status === "cancelled" ? t("docProcessAgain") : t("docProcess")}</button>}
       {busy && <button type="button" className="stamp-btn document-stop-button" disabled={disabled || retrying || removing}
-        onClick={stop}>{retrying ? "Stopping…" : "Stop processing"}</button>}
+        onClick={stop}>{retrying ? t("docStopping") : t("docStop")}</button>}
       <RemoveDocumentButton document={document} disabled={disabled || retrying}
         onBusyChange={setRemoving} onRemoved={onRemoved} onError={onError} />
     </div>
-    {busy && <p>Processing is already running. Actions become available when it finishes.</p>}
-    {document.status === "awaiting_review" && <p>Ready to review. You can remove this draft or review and save it.</p>}
-    {document.confirmedAt && <p>This document is retained as the source for confirmed records.</p>}
+    {busy && <p>{t("docBusyNote")}</p>}
+    {document.status === "awaiting_review" && <p>{t("docReviewNote")}</p>}
+    {document.confirmedAt && <p>{t("docConfirmedNote")}</p>}
   </div>;
 }

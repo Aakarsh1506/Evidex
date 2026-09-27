@@ -52,3 +52,14 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Database imports show their source rows as the tables they came from. */
+.review-tables { display: grid; gap: 14px; }
+.review-tables details { border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 12px; }
+.review-tables summary { cursor: pointer; font-family: var(--font-type); text-transform: uppercase; letter-spacing: .5px; font-size: .78rem; color: var(--accent); }
+.review-tables summary small { color: var(--text-dim); margin-left: 6px; }
+.review-table-scroll { overflow-x: auto; margin-top: 10px; }
+.review-table { border-collapse: collapse; width: 100%; font-size: .82rem; }
+.review-table th, .review-table td { border-bottom: 1px solid var(--card-border); padding: 7px 10px; text-align: left; white-space: nowrap; }
+.review-table th { color: var(--text-dim); font-family: var(--font-type); text-transform: uppercase; font-size: .72rem; letter-spacing: .5px; position: sticky; top: 0; background: #141414; }
+.review-table tbody tr:hover { background: #ffffff06; }

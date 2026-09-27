@@ -166,5 +166,6 @@
 .extracted-item dd { margin-left: 0; margin-bottom: 8px; }
 .extracted-text { white-space: pre-wrap; max-height: 500px; overflow: auto; }
 .upload-page > .upload-error { max-width: 900px; margin: 20px auto; }
-/* Guidance shown when a database export is the chosen source. */
+
+/* Progress line shown while a batch of files uploads. */
 .upload-hint { max-width: 520px; margin: 4px auto 0; color: var(--text-dim); font-size: .8rem; line-height: 1.55; text-align: center; }

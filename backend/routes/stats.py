@@ -21,9 +21,10 @@ async def get_stats(request: Request):
                         FROM cases c JOIN case_people cp ON cp.case_id=c.case_id
                         JOIN crime_types ct ON ct.crime_id = c.crime_id
                         GROUP BY ct.crime_name ORDER BY count DESC"""),
-            db.query(
-                "SELECT city, COUNT(*)::int AS count FROM persons GROUP BY city ORDER BY count DESC"
-            ),
+            # People with no recorded city are counted in the total, not shown as a blank place.
+            db.query("""SELECT city, COUNT(*)::int AS count FROM persons
+                        WHERE btrim(COALESCE(city, '')) <> ''
+                        GROUP BY city ORDER BY count DESC"""),
             db.query("SELECT COUNT(*)::int AS count FROM cases"),
         )
         traced = 0

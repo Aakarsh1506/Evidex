@@ -24,13 +24,13 @@ export default function NetworkExplanation({ id, selection, onClear }) {
         body: JSON.stringify({ selection: { type: selection.type, id: selection.id } }),
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Unable to generate an insight.");
-      if (typeof data.explanation !== "string" || !data.explanation.trim()) throw new Error("No insight was returned. Please try again.");
+      if (!response.ok) throw new Error(data.error || t("insightFailed"));
+      if (typeof data.explanation !== "string" || !data.explanation.trim()) throw new Error(t("insightEmpty"));
       if (!controller.signal.aborted) setExplanation(data.explanation);
     } catch (err) {
       if (!controller.signal.aborted) setError(
         err instanceof SyntaxError || err instanceof TypeError
-          ? "Cannot reach the backend. Start or restart FastAPI on port 5050, then try again."
+          ? t("backendUnreachable")
           : err.message
       );
     } finally {
@@ -42,13 +42,13 @@ export default function NetworkExplanation({ id, selection, onClear }) {
   return (
     <section className="network-ai" aria-labelledby="network-ai-title" aria-busy={loading}>
       <h3 id="network-ai-title">{t("aiInsight")}</h3>
-      <p>{selection ? `Selected: ${selection.label}` : "Select a node or relationship in the graph to enable AI insight."}</p>
-      {selection && <p>Review the evidence, investigative significance, and follow-up checks for this selection. The configured AI provider receives the relevant records.</p>}
+      <p>{selection ? `Selected: ${selection.label}` : t("insightSelectFirst")}</p>
+      {selection && <p>{t("insightIntro")}</p>}
       <button className="stamp-btn small" onClick={explain} disabled={!selection || loading}>
-        {loading ? "Generating insight…" : explanation ? "Regenerate insight" : "AI insight"}
+        {loading ? t("insightGenerating") : explanation ? t("insightRegenerate") : t("aiInsight")}
       </button>
-      {selection && <button className="stamp-btn small" type="button" onClick={onClear}>Clear selection</button>}
-      {loading && <p role="status">Reading the available records…</p>}
+      {selection && <button className="stamp-btn small" type="button" onClick={onClear}>{t("clearSelection")}</button>}
+      {loading && <p role="status">{t("insightReading")}</p>}
       {error && <p className="network-ai-error" role="alert">{error}</p>}
       {explanation && <div className="network-ai-answer" aria-live="polite">{formatInsight(explanation)}</div>}
 

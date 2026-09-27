@@ -5,7 +5,7 @@
 -- Upload this file on the Upload page with source "Database export (SQL dump, SQLite, CSV, JSON)".
 -- The backend reads the rows as data and stages them for review; no statement here is executed.
 -- Produce a comparable file from a real database with:
---   pg_dump --format=plain --data-only --inserts -d yourdb -f export.sql
+--   pg_dump --format=plain --column-inserts -d yourdb -f export.sql
 --
 
 INSERT INTO crime_types (crime_id, crime_name, description) VALUES

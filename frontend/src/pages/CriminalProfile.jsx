@@ -5,7 +5,6 @@ import {
   fetchWorkspace, pinCriminal, unpinCriminal,
   addToWorkingList, removeFromWorkingList,
 } from "../api/workspace";
-import NetworkGraph from "../components/NetworkGraph";
 import BackButton from "../components/BackButton";
 import "./CriminalProfile.css";
 import RelationGraph from "../components/RelationGraph";
@@ -21,7 +20,6 @@ function CriminalProfile() {
   const [relations, setRelations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [graphMode, setGraphMode] = useState("network"); // "network" | "map"
 
   const [pinnedId, setPinnedIdState] = useState(null);
   const [inList, setInList] = useState(false);
@@ -64,7 +62,7 @@ function CriminalProfile() {
     return (
       <div className="dossier-page">
         <BackButton />
-        <p className="empty-note">This file does not exist.</p>
+        <p className="empty-note">{t("fileMissing")}</p>
       </div>
     );
   }
@@ -113,7 +111,6 @@ function CriminalProfile() {
               <img src={criminal.photo} alt={criminal.name} className="dossier-photo" />
               <span className="form-number">File {criminal.id}</span>
               <h2>{criminal.name}</h2>
-              <p className="dossier-alias">Known as "{criminal.alias}"</p>
             </div>
 
             <div className="dossier-row"><span>{t("dateBirth")}</span><span>{criminal.dob}</span></div>
@@ -151,36 +148,20 @@ function CriminalProfile() {
 
             <div className="dossier-actions">
               <button className={`stamp-btn small ${isPinned ? "stamp-btn-active" : ""}`} onClick={handlePinToggle}>
-                {isPinned ? "Unpin from dashboard" : "Pin to dashboard"}
+                {isPinned ? t("unpinFromDashboard") : t("pinToDashboard")}
               </button>
               <button className={`stamp-btn small ${inList ? "stamp-btn-active" : ""}`} onClick={handleListToggle}>
-                {inList ? "Remove from list" : "Add to list"}
+                {t(inList ? "removeFromList" : "addToList")}
               </button>
             </div>
           </div>
 
-          <button className="stamp-btn full-width" onClick={() => navigate("/dashboard")}>Close file</button>
+          <button className="stamp-btn full-width" onClick={() => navigate("/dashboard")}>{t("closeFile")}</button>
         </div>
 
         <div className="dossier-right">
 
           <div className="graph-toolbar">
-            <div className="graph-toggle" role="tablist" aria-label="Graph view">
-              <button
-                type="button"
-                className={`graph-toggle-btn ${graphMode === "network" ? "graph-toggle-active" : ""}`}
-                onClick={() => { setSelection(null); setGraphMode("network"); }}
-              >
-                {t("network")}
-              </button>
-              <button
-                type="button"
-                className={`graph-toggle-btn ${graphMode === "map" ? "graph-toggle-active" : ""}`}
-                onClick={() => { setSelection(null); setGraphMode("map"); }}
-              >
-                {t("map")}
-              </button>
-            </div>
             <button type="button" className="graph-analysis-btn" onClick={() => navigate(`/analysis/${id}`)}>
               {t("addToAnalysis")}
             </button>
@@ -189,24 +170,13 @@ function CriminalProfile() {
           <div
             className="graph-frame"
           >
-            {graphMode === "network" ? (
-              <RelationGraph
-                key={id}
-                onSelectionChange={setSelection}
-                mainCriminal={displayedCriminal}
-                onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
-                height={520}
-              />
-            ) : (
-              <NetworkGraph
-                onSelectionChange={setSelection}
-                selection={selection}
-                mainCriminal={displayedCriminal}
-                relations={relations}
-                onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
-                height={520}
-              />
-            )}
+            <RelationGraph
+              key={id}
+              onSelectionChange={setSelection}
+              mainCriminal={displayedCriminal}
+              onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
+              height={520}
+            />
           </div>
         </div>
       </div>

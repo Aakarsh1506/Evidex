@@ -209,7 +209,7 @@ export default function RelationGraph({ mainCriminal, network: suppliedNetwork, 
 
   return <div className="relation-graph">
     <div className="relation-graph__toolbar">
-      <div role="group" aria-label="Graph controls" className="relation-graph__controls">
+      <div role="group" aria-label={t("graphControls")} className="relation-graph__controls">
         <button className="rg-btn" type="button" aria-label={t("zoomIn")} disabled={!network} onClick={() => zoom(1.3)}>+</button>
         <button className="rg-btn" type="button" aria-label={t("zoomOut")} disabled={!network} onClick={() => zoom(1 / 1.3)}>−</button>
         <button className="rg-btn" type="button" disabled={!network} onClick={() => { if (cyRef.current) fitAroundPerson(cyRef.current); }}>{t("fit")}</button>
@@ -231,22 +231,22 @@ export default function RelationGraph({ mainCriminal, network: suppliedNetwork, 
         <div className="relation-graph__canvas-wrap">
           <div ref={container} className="relation-graph__canvas" style={{ height }} role="img" aria-label={`Relationship graph centered on ${mainCriminal.name}. Use the selector below to inspect nodes and links.`} />
         </div>
-        {network.edges.length === 0 && <p className="relation-graph__empty">{t("noRelationships") || "No relationships are recorded for this person."}</p>}
+        {network.edges.length === 0 && <p className="relation-graph__empty">{t("noRelationshipsPerson")}</p>}
         {network.truncated && <p role="status" className="relation-graph__truncated">Showing the first {network.pathLimit.toLocaleString()} paths; some connections are omitted.</p>}
 
         <div aria-live="polite">{activeSelection && <div className="relation-graph__panel">
           <span className="relation-graph__panel-title">{activeSelection.label}</span>
-          <span className="relation-graph__panel-meta">{activeSelection.kind ? `${activeSelection.kind} · ${activeSelection.depth === 0 ? 'Selected person' : `${activeSelection.depth} graph steps away`}` : 'Recorded relationship'}</span>
-          {activeSelection.personId && <span className="relation-graph__panel-meta">{activeSelection.alias ? `"${activeSelection.alias}" · ` : ''}{activeSelection.personId} · {activeSelection.city || 'City unavailable'}</span>}
+          <span className="relation-graph__panel-meta">{activeSelection.kind ? `${activeSelection.kind} · ${activeSelection.depth === 0 ? t("selectedPerson") : `${activeSelection.depth} ${t("graphStepsAway")}`}` : t("recordedRelationship")}</span>
+          {activeSelection.personId && <span className="relation-graph__panel-meta">{activeSelection.personId} · {activeSelection.city || t("cityUnavailable")}</span>}
           {(activeSelection.relationships ?? [activeSelection]).map((relation) => <div className="relation-graph__panel-relation" key={relation.id}>
             {activeSelection.count > 1 && <span className="relation-graph__panel-meta relation-graph__panel-label">{relation.label}</span>}
             {relation.reason && <span className="relation-graph__panel-meta">{relation.reason}</span>}
-            {relation.evidence && <span className="relation-graph__panel-meta">Evidence: {relation.evidence}</span>}
-            {relation.reviewStatus && <span className="relation-graph__panel-meta">Review: {relation.reviewStatus}</span>}
-            {relation.provenance && <span className="relation-graph__panel-meta">Source: {relation.provenance}</span>}
+            {relation.evidence && <span className="relation-graph__panel-meta">{t("evidenceLabel")}: {relation.evidence}</span>}
+            {relation.reviewStatus && <span className="relation-graph__panel-meta">{t("reviewLabel")}: {relation.reviewStatus}</span>}
+            {relation.provenance && <span className="relation-graph__panel-meta">{t("sourceLabel")}: {relation.provenance}</span>}
           </div>)}
           <div className="relation-graph__panel-actions">
-            {activeSelection.personId && activeSelection.personId !== String(mainCriminal.id) && onNodeClick && <button className="rg-btn" type="button" onClick={() => onNodeClick(activeSelection.personId)}>Open profile</button>}
+            {activeSelection.personId && activeSelection.personId !== String(mainCriminal.id) && onNodeClick && <button className="rg-btn" type="button" onClick={() => onNodeClick(activeSelection.personId)}>{t("openProfile")}</button>}
             <button className="rg-btn" type="button" onClick={() => inspect('')}>{t("clearSelection") || "Clear selection"}</button>
           </div>
         </div>}</div>

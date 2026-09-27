@@ -11,11 +11,9 @@ import {
 import "./UploadDoc.css";
 
 const STATUS = {
-  awaiting_review: "Ready to review · confirmation needed",
-  stored: "Stored · ready to process", queued: "Queued", processing: "Extracting text and entities",
-  syncing: "Saving Relationships" , complete: "Relations Saved",
-  failed: "Processing failed", sync_failed: "Sync Failed",
-  cancelled: "Processing stopped",
+  awaiting_review: "upAwaiting", stored: "upStored", queued: "revQueued",
+  processing: "upProcessing", syncing: "upSyncing", complete: "upComplete",
+  failed: "revFailed", sync_failed: "upSyncFailed", cancelled: "revCancelled",
 };
 const BUSY = new Set(["queued", "processing", "syncing"]);
 
@@ -115,12 +113,11 @@ export default function UploadDoc() {
         onChange={(event) => setSourceType(event.target.value)}>
         {Object.entries(types).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
       </select>
-      {sourceType === "database" && <p className="upload-hint">{t("databaseHint")}</p>}
       <input ref={input} className="upload-input-hidden" type="file" multiple accept={extensions.join(",")}
         onChange={upload} />
       <button className="stamp-btn upload-btn-center" disabled={!!uploading || loading || !extensions.length}
         onClick={() => input.current?.click()}>
-        {uploading ? `${t("upload")}… ${uploading.done + 1}/${uploading.total}` : `${t("upload")} and extract`}
+        {uploading ? `${t("upload")}… ${uploading.done + 1}/${uploading.total}` : `${t("upload")} ${t("upAndExtract")}`}
       </button>
       {uploading && <>
         <p className="upload-hint" role="status">{uploading.total > 1
@@ -135,10 +132,10 @@ export default function UploadDoc() {
         {documents.map((doc) => <article className="doc-card" key={doc.id}>
           <button type="button" className="doc-card-open"
           onClick={() => { if (doc.status === "awaiting_review") { navigate(`/documents/${doc.id}/review`); return; } if (selected !== doc.id) { setDetail(null); setSelected(doc.id); } }} aria-pressed={selected === doc.id}>
-          <span className="doc-card-tag">{types[doc.sourceType] || "Document"}</span>
+          <span className="doc-card-tag">{types[doc.sourceType] || t("upDocument")}</span>
           <h3>{doc.name}</h3>
           <p className="doc-card-meta">{(doc.size / 1024).toFixed(1)} KB · {new Date(doc.uploadedAt).toLocaleDateString()}</p>
-          <p className="doc-status">{STATUS[doc.status] || doc.status}</p>
+          <p className="doc-status">{STATUS[doc.status] ? t(STATUS[doc.status]) : doc.status}</p>
           </button>
           <DocumentProgress document={doc} />
           <DocumentActions document={doc} onUpdated={updatedDocument}
@@ -148,7 +145,7 @@ export default function UploadDoc() {
       </div>}
     {selected !== null && <section className="doc-preview extraction-detail" aria-live="polite">
       <div className="doc-preview-header">
-        <h2>{detail?.name || "Loading extracted information…"}</h2>
+        <h2>{detail?.name || t("revLoadingExtraction")}</h2>
         <button className="doc-preview-close" onClick={() => { setSelected(null); setDetail(null); }}>{t("close")}</button>
       </div>
       {detail && <>
@@ -159,12 +156,12 @@ export default function UploadDoc() {
         {detail.processingError && <p role="alert" className="upload-error">{detail.processingError}</p>}
         <p><a href={documentFileUrl(detail.id)} target="_blank" rel="noreferrer">{t("openOriginal")}</a></p>
         {detail.extraction && <>
-          <p><Link to={`/documents/${detail.id}/review`}>Open full entity review →</Link></p>
+          <p><Link to={`/documents/${detail.id}/review`}>{t("upOpenReview")}</Link></p>
           <h3>{entities.length} entities · {relationships.length} relationships</h3>
-          <p>Source assertions may contain errors or allegations. Witnesses and mentioned people are not automatically suspects.</p>
+          <p>{t("upCaution")}</p>
           {entities.map((entity) => <details key={entity.ref} className="extracted-item">
             <summary>{entity.kind}: {entity.name}</summary>
-            {entity.identifier && <p>Source identifier: {entity.identifier}</p>}
+            {entity.identifier && <p>{t("revSourceIdentifier")}: {entity.identifier}</p>}
             <dl>{entity.attributes.map((attr, index) => <div key={`${attr.key}-${index}`}>
               <dt>{attr.key.replaceAll("_", " ")}</dt><dd>{attr.value}</dd>
             </div>)}</dl>
@@ -174,9 +171,9 @@ export default function UploadDoc() {
             <summary>{names[relation.subject]} → {relation.predicate} → {names[relation.object]}</summary>
             <blockquote>{relation.evidence}</blockquote>
           </details>)}
-          {!entities.length && <p>No supported entities were found in this source.</p>}
+          {!entities.length && <p>{t("upNoEntities")}</p>}
         </>}
-        {detail.text && <details className="extracted-item"><summary>Extracted source text</summary>
+        {detail.text && <details className="extracted-item"><summary>{t("revExtractedSourceText")}</summary>
           <pre className="extracted-text">{detail.text}</pre></details>}
       </>}
     </section>}

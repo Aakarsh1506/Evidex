@@ -1,14 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../api/auth";
+import { useTranslation } from "../i18n";
 import "./LoginPage.css";
 
 const STEPS = [
-  { key: "username", label: "Officer ID", type: "text", prompt: "Enter your officer ID." },
-  { key: "password", label: "Password", type: "password", prompt: "Enter your password." },
+  { key: "username", label: "loginOfficerId", type: "text", prompt: "loginPromptId" },
+  { key: "password", label: "loginPassword", type: "password", prompt: "loginPromptPassword" },
 ];
 
 function LoginPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "" });
   const [officer, setOfficer] = useState(null); // set on successful login, shown on the back face
@@ -52,26 +54,26 @@ function LoginPage() {
 
   const statusLabel =
     status === "denied"
-      ? "ACCESS DENIED"
+      ? t("loginAccessDenied")
       : status === "checking"
-        ? "VERIFYING..."
-        : `AWAITING ${step.label.toUpperCase()}`;
+        ? t("loginVerifyingCaps")
+        : `${t("loginAwaiting")} ${t(step.label).toUpperCase()}`;
 
   // The hint line shown below the input — echoes the officer ID as it's
   // typed, or a character count while entering the password.
   const inputHint =
     step.key === "username"
       ? value
-        ? `ID LOGGED: ${value.toUpperCase()}`
-        : "Awaiting input..."
+        ? `${t("loginIdLogged")}: ${value.toUpperCase()}`
+        : t("loginAwaitingInput")
       : value
-        ? `${value.length} character${value.length === 1 ? "" : "s"} entered`
-        : "Awaiting input...";
+        ? `${value.length} ${t("loginCharsEntered")}`
+        : t("loginAwaitingInput");
 
   return (
     <div className="login-page">
       <button type="button" className="back-btn" onClick={handleBack}>
-        ← Back
+        ← {t("back")}
       </button>
 
       <div className={`case-flip-wrapper ${status === "flipped" ? "is-flipped" : ""}`}>
@@ -81,14 +83,14 @@ function LoginPage() {
           <div className={`case-face case-face-front ${status === "denied" ? "status-denied" : ""}`}>
             <div className="case-meta">
               <div className="case-meta-left">
-                <div className="meta-row"><span>CASE ID</span><span>: OFFICER-ACCESS</span></div>
-                <div className="meta-row"><span>CLASSIFICATION</span><span>: <em className="hot">TOP SECRET</em> / LEVEL S</span></div>
-                <div className="meta-row"><span>PRIORITY</span><span>: ABSOLUTE</span></div>
+                <div className="meta-row"><span>{t("loginCaseId")}</span><span>: {t("loginOfficerAccess")}</span></div>
+                <div className="meta-row"><span>{t("loginClassification")}</span><span>: <em className="hot">{t("loginTopSecret")}</em> / LEVEL S</span></div>
+                <div className="meta-row"><span>{t("loginPriority")}</span><span>: {t("loginAbsolute")}</span></div>
                 <div className="meta-row">
-                  <span>STATUS</span>
+                  <span>{t("loginStatus")}</span>
                   <span>: <em className={status === "denied" ? "hot" : "pending"}>{statusLabel}</em></span>
                 </div>
-                <div className="meta-row"><span>FILE TYPE</span><span>: OFFICER ACCESS</span></div>
+                <div className="meta-row"><span>{t("loginFileType")}</span><span>: {t("loginOfficerAccess")}</span></div>
               </div>
 
               <div className="scales-box">
@@ -99,7 +101,7 @@ function LoginPage() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <p>NO ONE ENTERS UNVERIFIED.</p>
+                <p>{t("loginMotto")}</p>
               </div>
             </div>
 
@@ -111,21 +113,21 @@ function LoginPage() {
                   <circle cx="50" cy="42" r="20" fill="#1c1c1c" />
                   <path d="M15 118c2-28 20-40 35-40s33 12 35 40z" fill="#1c1c1c" />
                 </svg>
-                <span className="stamp stamp-photo">{status === "denied" ? "DENIED" : "UNVERIFIED"}</span>
+                <span className="stamp stamp-photo">{t(status === "denied" ? "loginDenied" : "loginUnverified")}</span>
               </div>
 
               <div className="subject-info">
-                <p className="subject-label">Subject</p>
-                <p className="subject-name">{form.username ? form.username.toUpperCase() : "UNKNOWN"}</p>
+                <p className="subject-label">{t("loginSubject")}</p>
+                <p className="subject-name">{form.username ? form.username.toUpperCase() : t("loginUnknown")}</p>
 
-                <p className="subject-line"><span>OFFICER ID</span>{form.username || "UNKNOWN"}</p>
-                <p className="subject-line"><span>CLEARANCE</span><em className="hot">PENDING</em></p>
+                <p className="subject-line"><span>{t("loginOfficerId").toUpperCase()}</span>{form.username || t("loginUnknown")}</p>
+                <p className="subject-line"><span>{t("loginClearance")}</span><em className="hot">{t("loginPending")}</em></p>
               </div>
             </div>
 
             <form className="unlock-form" onSubmit={handleSubmitStep}>
               <label className="unlock-label">
-                {step.prompt}
+                {t(step.prompt)}
                 <input
                   type={step.type}
                   value={value}
@@ -140,19 +142,16 @@ function LoginPage() {
 
               <div className="button-row">
                 <button type="submit" className="unlock-btn" disabled={status === "checking"}>
-                  {status === "checking" ? "Verifying..." : isLastStep ? "Unlock file" : "Continue"}
+                  {status === "checking" ? t("loginVerifying") : isLastStep ? t("loginUnlock") : t("loginContinue")}
                 </button>
               </div>
 
-              {status === "denied" && <p className="denied-text">Access denied. Check your ID and password.</p>}
+              {status === "denied" && <p className="denied-text">{t("loginDeniedNote")}</p>}
             </form>
 
             <div className="warning-strip">
               <span className="warn-icon">!</span>
-              <p>
-                THIS FILE CONTAINS SENSITIVE INFORMATION. UNAUTHORIZED ACCESS, COPYING, OR
-                DISCLOSURE IS STRICTLY PROHIBITED. VIOLATORS WILL BE PROSECUTED TO THE FULL EXTENT OF THE LAW.
-              </p>
+              <p>{t("loginWarning")}</p>
               <span className="lock-icon" aria-hidden="true">🔒</span>
             </div>
           </div>
@@ -164,18 +163,18 @@ function LoginPage() {
               <span>CNA</span>
             </div>
             <h2 className="back-title">Criminal Network Analysis</h2>
-            <p className="back-subtitle">Identity confirmed. Review before entering the case system.</p>
+            <p className="back-subtitle">{t("loginConfirmed")}</p>
 
             <div className="back-summary">
-              <div className="summary-row"><span>Officer name</span><span>{officer?.name}</span></div>
-              <div className="summary-row"><span>Officer ID</span><span>{officer?.username}</span></div>
-              <div className="summary-row"><span>Organisation</span><span>{officer?.orgName}</span></div>
-              <div className="summary-row"><span>Role</span><span>{officer?.role}</span></div>
+              <div className="summary-row"><span>{t("loginOfficerName")}</span><span>{officer?.name}</span></div>
+              <div className="summary-row"><span>{t("loginOfficerId")}</span><span>{officer?.username}</span></div>
+              <div className="summary-row"><span>{t("loginOrganisation")}</span><span>{officer?.orgName}</span></div>
+              <div className="summary-row"><span>{t("loginRole")}</span><span>{officer?.role}</span></div>
             </div>
 
             <div className="button-row">
               <button type="button" className="enter-btn" onClick={handleEnter}>
-                Enter
+                {t("loginEnter")}
               </button>
             </div>
           </div>

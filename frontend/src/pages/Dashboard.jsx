@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { fetchCriminalById, fetchCrimeTypes } from "../api/criminals";
 import { fetchStats } from "../api/stats";
 import { fetchWorkspace, unpinCriminal, removeFromWorkingList } from "../api/workspace";
-import NetworkGraph from "../components/NetworkGraph";
 import RelationGraph from "../components/RelationGraph";
 import "./Dashboard.css";
 import { useTranslation } from "../i18n";
@@ -15,13 +14,11 @@ function Dashboard() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [presetTags, setPresetTags] = useState([]);
-  const [graphMode, setGraphMode] = useState("map"); // "map" | "network"
 
   const [stats, setStats] = useState(null);
 
   const [pinnedId, setPinnedIdState] = useState(null);
   const [pinnedCriminal, setPinnedCriminal] = useState(null);
-  const [pinnedRelations, setPinnedRelations] = useState([]);
   const [workingList, setWorkingList] = useState([]);
 
   useEffect(() => {
@@ -41,14 +38,12 @@ function Dashboard() {
   useEffect(() => {
     if (!pinnedId) {
       setPinnedCriminal(null);
-      setPinnedRelations([]);
       return;
     }
     let cancelled = false;
     fetchCriminalById(pinnedId).then((data) => {
       if (cancelled || !data) return;
       setPinnedCriminal(data.criminal);
-      setPinnedRelations(data.relations);
     });
     return () => {
       cancelled = true;
@@ -101,7 +96,7 @@ function Dashboard() {
           <input
             type="text"
             className="search-input"
-            placeholder={`${t("search")} a name, or type a crime — robbery, fraud...`}
+            placeholder={t("searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => setShowDropdown(true)}
@@ -141,39 +136,12 @@ function Dashboard() {
           <div className="working-col working-map-col">
             {pinnedCriminal ? (
               <>
-                <div className="working-map-toolbar">
-                  <div className="graph-toggle" role="tablist" aria-label={t("networkAnalysis")}>
-                    <button
-                      type="button"
-                      className={`graph-toggle-btn ${graphMode === "map" ? "graph-toggle-active" : ""}`}
-                      onClick={() => setGraphMode("map")}
-                    >
-                      {t("map") || "Map"}
-                    </button>
-                    <button
-                      type="button"
-                      className={`graph-toggle-btn ${graphMode === "network" ? "graph-toggle-active" : ""}`}
-                      onClick={() => setGraphMode("network")}
-                    >
-                      {t("network") || "Network"}
-                    </button>
-                  </div>
-                </div>
                 <div className="graph-frame mini">
-                  {graphMode === "map" ? (
-                    <NetworkGraph
-                      mainCriminal={pinnedCriminal}
-                      relations={pinnedRelations}
-                      onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
-                      height={560}
-                    />
-                  ) : (
-                    <RelationGraph
-                      mainCriminal={pinnedCriminal}
-                      onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
-                      height={560}
-                    />
-                  )}
+                  <RelationGraph
+                    mainCriminal={pinnedCriminal}
+                    onNodeClick={(relatedId) => navigate(`/criminal/${relatedId}`)}
+                    height={560}
+                  />
                 </div>
               </>
             ) : (
@@ -190,7 +158,6 @@ function Dashboard() {
                 <div className="mini-dossier">
                   <img src={pinnedCriminal.photo} alt={pinnedCriminal.name} className="mini-photo" />
                   <h4>{pinnedCriminal.name}</h4>
-                  <p className="dossier-alias">Known as "{pinnedCriminal.alias}"</p>
                   <div className="dossier-row"><span>{t("lastSeen")}</span><span>{pinnedCriminal.lastSeen}</span></div>
                   <div className="tag-row">
                     {pinnedCriminal.crimeTags.map((tag) => (

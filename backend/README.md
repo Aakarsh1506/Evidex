@@ -94,7 +94,7 @@ Rows become entity candidates (people, cases, locations, crime types, organizati
 phones), foreign keys and join tables such as `case_people` become relationships, and each record
 cites the row it came from. The result is staged for the same officer review as any other upload;
 nothing is saved until it is confirmed. Custom-format `pg_dump` files are rejected with instructions
-to export plain SQL (`pg_dump --format=plain --data-only --inserts`). Limits: 2,000 rows per table,
+to export plain SQL (`pg_dump --format=plain --column-inserts`). Limits: 2,000 rows per table,
 60 tables and 200 records per import. A ready-made example to try is `docs/sample_database_export.sql`
 (synthetic records: 5 people, 2 cases, places, an organization and a vehicle).
 

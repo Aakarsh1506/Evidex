@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "../i18n";
 import { useNavigate } from "react-router-dom";
 import { fetchCurrentOfficer, logout } from "../api/auth";
 import { fetchOfficers, createOfficer, deactivateOfficer } from "../api/officers";
@@ -21,6 +22,7 @@ function EyeIcon({ open }) {
 }
 
 function AdminPanel() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [officers, setOfficers] = useState([]);
@@ -92,7 +94,7 @@ function AdminPanel() {
       <header className="admin-top">
         <div>
           <span className="admin-badge">ADMIN</span>
-          <h2>Officer accounts</h2>
+          <h2>{t("adminAccounts")}</h2>
         </div>
         <button type="button" className="stamp-btn small" onClick={handleLogout}>
           Log out
@@ -101,15 +103,15 @@ function AdminPanel() {
 
       <div className="admin-grid">
         <form className="admin-form" onSubmit={handleSubmit}>
-          <h3>Add new officer</h3>
+          <h3>{t("adminAddOfficer")}</h3>
 
           <label>
-            Officer ID (username)
+            {t("adminUsername")}
             <input name="username" value={form.username} onChange={handleChange} required />
           </label>
 
           <label>
-            Password
+            {t("loginPassword")}
             <div className="password-field">
               <input
                 type={showPassword ? "text" : "password"}
@@ -124,7 +126,7 @@ function AdminPanel() {
                 className="eye-toggle"
                 onClick={() => setShowPassword((s) => !s)}
                 tabIndex={-1}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={t(showPassword ? "adminHidePassword" : "adminShowPassword")}
               >
                 <EyeIcon open={showPassword} />
               </button>
@@ -132,40 +134,40 @@ function AdminPanel() {
           </label>
 
           <label>
-            Full name
+            {t("adminFullName")}
             <input name="name" value={form.name} onChange={handleChange} required />
           </label>
 
           <label>
-            Date of birth
+            {t("adminDob")}
             <input type="date" name="dob" value={form.dob} onChange={handleChange} />
           </label>
 
           <label>
-            Organisation
+            {t("loginOrganisation")}
             <input name="orgName" value={form.orgName} onChange={handleChange} required />
           </label>
 
           <button type="submit" className="stamp-btn full-width" disabled={status === "saving"}>
-            {status === "saving" ? "Saving..." : "Create officer account"}
+            {status === "saving" ? t("adminSaving") : t("adminCreate")}
           </button>
 
-          {status === "success" && <p className="admin-success">Officer account created.</p>}
+          {status === "success" && <p className="admin-success">{t("adminCreated")}</p>}
           {status === "error" && <p className="admin-error">{error}</p>}
         </form>
 
         <div className="admin-list">
-          <h3>Existing officers</h3>
+          <h3>{t("adminExisting")}</h3>
           {officers.length === 0 ? (
-            <p className="empty-note">No officers yet.</p>
+            <p className="empty-note">{t("adminNoOfficers")}</p>
           ) : (
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Org</th>
-                  <th>Status</th>
+                  <th>{t("adminId")}</th>
+                  <th>{t("adminName")}</th>
+                  <th>{t("adminOrg")}</th>
+                  <th>{t("status")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -177,13 +179,13 @@ function AdminPanel() {
                     <td>{o.org_name}</td>
                     <td>
                       <span className={`tag-stamp ${o.is_active ? "" : "tag-stamp-dim"}`}>
-                        {o.is_active ? "Active" : "Deactivated"}
+                        {t(o.is_active ? "adminActive" : "adminDeactivated")}
                       </span>
                     </td>
                     <td>
                       {o.is_active && (
                         <button type="button" className="link-remove" onClick={() => handleDeactivate(o.officer_id)}>
-                          Deactivate
+                          {t("adminDeactivate")}
                         </button>
                       )}
                     </td>

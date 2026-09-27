@@ -31,7 +31,7 @@ function CriminalList() {
         setListedIds(workspace.workingList.map((c) => c.id));
       })
       .catch(() => {
-        if (!cancelled) setError("Could not reach the case database.");
+        if (!cancelled) setError(t("dbUnreachable"));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -82,7 +82,7 @@ function CriminalList() {
             <img src={c.photo} alt={c.name} className="folder-photo" />
             <div className="folder-info">
               <h3>{c.name}</h3>
-            <p className="folder-alias">{t("basedIn")} {c.location.city}{c.alias ? ` · ${c.alias}` : ""}</p>
+            <p className="folder-alias">{c.location?.city ? `${t("basedIn")} ${c.location.city}` : ""}</p>
               <div className="tag-row">
                 {c.crimeTags.map((tag) => <span key={tag} className="tag-stamp">{tag}</span>)}
               </div>

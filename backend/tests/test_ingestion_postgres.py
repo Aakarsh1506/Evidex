@@ -152,19 +152,20 @@ async def test_persistence_maps_all_kinds_roles_and_repairs_sequence(real_db):
     assert (await real_db.query("SELECT COUNT(*) AS n FROM persons WHERE name='Bob'"))[0]["n"] == 2
 
 
-async def test_crime_type_is_saved_with_a_capital_first_letter(real_db):
+@pytest.mark.parametrize("source", ["financial fraud", "FINANCIAL FRAUD"])
+async def test_crime_type_is_saved_in_sentence_case(real_db, source):
     doc_id = await add_document(real_db)
     result = full_extraction()
     crime = next(e for e in result.entities if e.kind == "CrimeType")
-    crime.name = crime.evidence = "financial fraud"
+    crime.name = crime.evidence = source
     payload = await persist_extraction(real_db, doc_id, result)
     rows = await real_db.query("SELECT crime_name FROM crime_types WHERE crime_id > 10")
     assert [row["crime_name"] for row in rows] == ["Financial fraud"]
     saved = await real_db.query("SELECT name, evidence FROM extracted_entities WHERE kind='CrimeType'")
-    assert saved == [{"name": "Financial fraud", "evidence": "financial fraud"}]
+    assert saved == [{"name": "Financial fraud", "evidence": source}]
     node = next(n for n in payload["nodes"] if n["kind"] == "CrimeType")
     assert node["properties"]["crime_name"] == "Financial fraud"
-    assert crime.name == "financial fraud"  # The reviewed snapshot is not modified.
+    assert crime.name == source  # The reviewed snapshot is not modified.
 
 async def test_same_person_in_three_firs_is_offered_or_reused_not_silently_duplicated(real_db):
     from backend.services.entity_resolution import person_suggestions

@@ -1,6 +1,8 @@
+import { useTranslation } from "../i18n";
 import "./DocumentProgress.css";
 
 export default function DocumentProgress({ document, uploading = false }) {
+  const { t } = useTranslation();
   if (!uploading && (!document || document.status === "stored")) return null;
   const status = uploading ? "uploading" : document.status;
   const busy = ["uploading", "queued", "processing", "syncing"].includes(status);
@@ -11,11 +13,11 @@ export default function DocumentProgress({ document, uploading = false }) {
   const percent = done ? 100 : status === "queued" ? 0
     : Math.min(99, Math.max(0, Number(progress?.percent) || 0));
   const fallback = {
-    uploading: "Uploading document…", queued: "Waiting to start…",
-    processing: "Processing document…", syncing: "Saving network relationships…",
-    awaiting_review: "Extraction complete — ready for review", complete: "Reviewed records saved",
-    cancelled: "Processing stopped by officer",
-    failed: "Processing stopped", sync_failed: "Saving stopped",
+    uploading: t("progUploading"), queued: t("progQueued"),
+    processing: t("progProcessing"), syncing: t("progSyncing"),
+    awaiting_review: t("progAwaitingReview"), complete: t("progComplete"),
+    cancelled: t("progCancelledBy"),
+    failed: t("progFailed"), sync_failed: t("progSyncFailed"),
   };
   const label = done || ["queued", "uploading"].includes(status) ? fallback[status]
     : failed ? `${fallback[status]}${progress?.label ? ` · ${progress.label}` : ""}`

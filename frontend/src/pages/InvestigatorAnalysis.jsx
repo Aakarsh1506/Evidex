@@ -154,7 +154,7 @@ export default function InvestigatorAnalysis() {
           const added = entries.some((entry) => entry.person.id === person.id);
           return <li id={`analysis-result-${index}`} key={person.id} role="option" aria-selected={highlight === index} aria-disabled={added || !!adding}
             onMouseDown={(event) => event.preventDefault()} onMouseEnter={() => setHighlight(index)} onClick={() => void addPerson(person)}>
-            <span><strong>{person.name}</strong><small>{[person.id, person.alias, person.location?.city].filter(Boolean).join(" · ")}</small></span><span>{added ? t("analysisAdded") : t("analysisAdd")}</span>
+            <span><strong>{person.name}</strong><small>{[person.id, person.location?.city].filter(Boolean).join(" · ")}</small></span><span>{added ? t("analysisAdded") : t("analysisAdd")}</span>
           </li>;
         })}
         {!results.length && <li role="option" aria-disabled="true" aria-selected="false">{t("noSearchMatches")}</li>}

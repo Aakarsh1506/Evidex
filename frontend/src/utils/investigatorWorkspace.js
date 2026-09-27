@@ -48,7 +48,7 @@ export function searchPeople(people, query) {
   const words = normalize(query).split(/\s+/).filter(Boolean);
   if (!words.length) return [];
   return people.map((person) => {
-    const fields = [person.name, person.alias, person.id].map(normalize);
+    const fields = [person.name, person.id].map(normalize);
     const tokens = fields.flatMap((field) => [field, ...field.split(/\s+/)]);
     const score = words.reduce((total, word) => {
       const best = Math.min(...tokens.map((token) => {

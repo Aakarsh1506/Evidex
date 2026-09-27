@@ -182,8 +182,11 @@ async def persist_extraction(db, document_id, result):
         nodes, refs = [], {}
         for entity in result.entities:
             if entity.kind == "CrimeType":
-                # Source wording is kept; only the saved label starts with a capital.
-                entity = entity.model_copy(update={"name": entity.name[:1].upper() + entity.name[1:]})
+                # Source wording is kept; the saved label is sentence case, so "theft",
+                # "BURGLARY" and "Theft" cannot become three differently spelled rows.
+                name = entity.name
+                name = name.capitalize() if name.isupper() else name[:1].upper() + name[1:]
+                entity = entity.model_copy(update={"name": name})
             entity_id = stable_id(document_id, entity.ref)
             props = properties_for(entity)
             canonical, row = await canonical_entity(tx, entity, entity_id, props, person_matches.get(entity.ref))
